@@ -1,0 +1,29 @@
+# Core & Data Processing
+numpy
+pandas
+scikit-learn
+joblib
+scipy
+
+# Machine Learning & Optimization
+lightgbm
+optuna
+shap
+
+# Visualization
+matplotlib
+seaborn
+plotly
+
+# API FastAPI
+fastapi
+uvicorn
+pydantic
+
+# Dashboard Streamlit
+streamlit
+requests
+
+# Testing
+pytest
+httpx

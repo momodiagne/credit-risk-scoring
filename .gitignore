@@ -1,33 +1,35 @@
-# Données
+# Données lourdes (exclut les CSV bruts et nettoyés)
 data/raw/*
 data/processed/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 
-# Modèles entraînés
+# Modèles entraînés (fichiers lourds binaires)
 models/*.pkl
 models/*.joblib
 !models/.gitkeep
 
-# Python
+# Python & Caches
 __pycache__/
 *.py[cod]
 *.egg-info/
 .pytest_cache/
+.coverage
+htmlcov/
+
+# Environnements virtuels
 .venv/
 venv/
 env/
 
-# Jupyter
+# Jupyter Notebooks (fichiers temporaires)
 .ipynb_checkpoints/
 
-# Environnement
+# Fichiers d'environnement & OS
 .env
-
-# OS
 .DS_Store
 Thumbs.db
 
-# IDE
+# IDEs (VSCode, PyCharm)
 .vscode/
 .idea/

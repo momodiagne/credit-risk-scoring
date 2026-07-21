@@ -34,9 +34,16 @@ with st.sidebar:
     st.markdown("---")
 
     age = st.slider("Âge du client", 18, 100, 42)
-    income = st.number_input("Revenu Mensuel (€)", min_value=0.0, value=3500.0, step=100.0)
+
+    income_unknown = st.checkbox("Revenu inconnu / non communiqué")
+    if income_unknown:
+        income = None
+        st.caption("Le revenu sera estimé automatiquement (imputation MissForest).")
+    else:
+        income = st.number_input("Revenu Mensuel (€)", min_value=0.0, value=3500.0, step=100.0)
+
     dependents = st.number_input("Nombre de personnes à charge", min_value=0.0, value=2.0, step=1.0)
-    
+
     st.markdown("### 📊 Données Financières")
     revolving_util = st.slider("Taux d'utilisation crédit revolving (%)", 0.0, 100.0, 5.0) / 100.0
     debt_ratio = st.slider("Taux d'endettement (Debt Ratio)", 0.0, 2.0, 0.25, step=0.01)
@@ -56,7 +63,7 @@ client_payload = {
     "age": int(age),
     "NumberOfTime30_59DaysPastDueNotWorse": int(n_30_59),
     "DebtRatio": float(debt_ratio),
-    "MonthlyIncome": float(income) if income > 0 else None,
+    "MonthlyIncome": float(income) if income is not None else None,
     "NumberOfOpenCreditLinesAndLoans": int(open_lines),
     "NumberOfTimes90DaysLate": int(n_90),
     "NumberRealEstateLoansOrLines": int(real_estate),
@@ -69,7 +76,7 @@ if submit or "result" in st.session_state:
     try:
         if submit:
             with st.spinner("Analyse du dossier et calcul SHAP par l'API..."):
-                res = requests.post(API_URL, json=client_payload, timeout=5)
+                res = requests.post(API_URL, json=client_payload, timeout=20)
                 if res.status_code == 200:
                     st.session_state["result"] = res.json()
                 else:
@@ -144,3 +151,7 @@ if submit or "result" in st.session_state:
             "⚠️ Impossible de contacter l'API. Assurez-vous que le serveur FastAPI est démarré "
             "dans un terminal avec : `uvicorn api.main:app --reload`"
         )
+    except requests.exceptions.Timeout:
+        st.error("⚠️ L'API met trop de temps à répondre. Réessayez dans quelques instants.")
+    except requests.exceptions.RequestException as e:
+        st.error(f"⚠️ Erreur de connexion à l'API : {e}")

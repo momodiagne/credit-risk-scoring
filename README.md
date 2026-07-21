@@ -6,11 +6,11 @@ Système complet de Scoring de Crédit bancaire combinant le modèle **LightGBM*
 
 ## 📌 Fonctionnalités
 
-- **Pipeline de Données** : Nettoyage des anomalies (âge=0, codes 96/98) et imputation avancée par Random Forest (**MissForest**).
+- **Pipeline de Données** : Nettoyage des anomalies (âge=0, codes 96/98) et imputation avancée par Random Forest (**MissForest**) pour le revenu mensuel.
 - **Feature Engineering** : Création d'indicateurs de retard de paiement (`WeightedPastDue`, `HasAnyPastDue`) et ratios financiers (`IncomePerPerson`).
 - **Modélisation & Optimisation** : LightGBM optimisé par **Optuna** (AUC > 0.86, Gini > 0.72).
 - **Explicabilité (XAI)** : Explication des décisions au niveau global et individuel avec **SHAP**.
-- **API REST (FastAPI)** : Service haute performance pour servir les prédictions et les facteurs SHAP par HTTP.
+- **API REST (FastAPI)** : Service haute performance pour servir les prédictions et les facteurs SHAP par HTTP, avec une imputation du revenu cohérente entre entraînement et serving (réutilisation du même MissForest fitted, pas d'une constante).
 - **Dashboard Interactive (Streamlit)** : Interface de simulation pour les analystes crédit.
 - **Orchestration & DevOps** : Script d'exécution End-to-End (`run_pipeline.py`), suite de tests `pytest`, et déploiement `docker-compose`.
 
@@ -21,16 +21,27 @@ Système complet de Scoring de Crédit bancaire combinant le modèle **LightGBM*
 ### 1. Installation de l'environnement
 
 ```bash
-git clone https://github.com/votre_username/credit-risk-scoring.git
+git clone https://github.com/momodiagne/credit-risk-scoring.git
 cd credit-risk-scoring
 pip install -r requirements.txt
 ```
 
-### 2. Exécution du Pipeline ML End-to-End
+### 2. Modèles pré-entraînés inclus
 
-Pour tout ré-exécuter (nettoyage, imputation, entraînement, évaluation et SHAP) :
+Les artefacts entraînés (`models/*.joblib` : modèle LightGBM, imputer MissForest du revenu, moyenne de personnes à charge) sont **inclus dans le repo** afin que l'application fonctionne immédiatement après un clone, sans ré-entraînement préalable.
+
+Pour régénérer le pipeline complet depuis zéro (nettoyage, imputation, feature engineering, entraînement) :
+
 ```bash
 python run_pipeline.py
+```
+
+ou étape par étape :
+
+```bash
+python -m src.data.preprocess
+python -m src.features.build_features
+python -m src.models.train
 ```
 
 ### 3. Démarrage de l'API FastAPI
@@ -75,16 +86,15 @@ credit-risk-scoring/
 │   └── ...
 ├── dashboard/            # Application Streamlit
 │   └── app.py            # Application de scoring
-├── data/                 # Données brutes et traitées
-├── models/               # Modèles entraînés et explainers SHAP
-├── reports/              # Rapports d'évaluation
-├── notebooks/            # Notebooks Jupyter d'exploration
-├── tests/                # Tests unitaires et d'intégration
-├── docker-compose.yml    # Configuration Docker & Orchestration
-├── Dockerfile            # Build de l'image Docker
-└── run_pipeline.py       # Script d'exécution complet
+├── data/                 # Données brutes et traitées (régénérées via le pipeline)
+├── models/               # Modèles entraînés et explainers SHAP (inclus dans le repo)
+├── reports/               # Rapports d'évaluation
+├── notebooks/             # Notebooks Jupyter d'exploration
+├── tests/                 # Tests unitaires et d'intégration
+├── docker-compose.yml     # Configuration Docker & Orchestration
+├── Dockerfile             # Build de l'image Docker
+└── run_pipeline.py        # Script d'exécution complet
 ```
-
 ---
 
 ## 🧪 Tests

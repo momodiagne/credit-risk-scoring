@@ -1,12 +1,16 @@
-# Données lourdes (exclut les CSV bruts et nettoyés)
+# Données lourdes (exclut les CSV bruts et nettoyés, régénérables via le pipeline)
 data/raw/*
 data/processed/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 
-# Modèles entraînés (fichiers lourds binaires)
-models/*.pkl
-models/*.joblib
+# Modèles entraînés : committés volontairement (petits fichiers) pour que le
+# repo soit utilisable directement après un clone, sans ré-entraînement.
+# Régénérer avec :
+#   python -m src.data.preprocess
+#   python -m src.features.build_features
+#   python -m src.models.train
+!models/*.joblib
 !models/.gitkeep
 
 # Python & Caches

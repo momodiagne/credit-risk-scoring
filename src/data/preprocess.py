@@ -9,6 +9,7 @@ Lancer avec :
 
 from pathlib import Path
 
+import joblib
 import numpy as np
 import pandas as pd
 from sklearn.experimental import enable_iterative_imputer  # noqa: F401
@@ -18,6 +19,9 @@ from sklearn.ensemble import RandomForestRegressor
 from src.data.load import load_raw
 
 PROCESSED_PATH = Path("data/processed/cs-training-clean.csv")
+MODEL_DIR = Path("models")
+INCOME_IMPUTER_PATH = MODEL_DIR / "income_imputer.joblib"
+DEPENDENTS_MEAN_PATH = MODEL_DIR / "dependents_mean.joblib"
 
 SENTINEL_COLUMNS = [
     "NumberOfTime30-59DaysPastDueNotWorse",
@@ -80,15 +84,26 @@ def impute_monthly_income(df: pd.DataFrame) -> pd.DataFrame:
     imputed = imputer.fit_transform(df[cols])
     df["MonthlyIncome"] = imputed[:, -1]
     df["MonthlyIncome"] = df["MonthlyIncome"].clip(lower=0)
+
+    MODEL_DIR.mkdir(parents=True, exist_ok=True)
+    joblib.dump(imputer, INCOME_IMPUTER_PATH)
+
     return df
 
 
 def impute_all(df: pd.DataFrame) -> pd.DataFrame:
     df = impute_mean(df, "age")
+
+    dependents_mean = df["NumberOfDependents"].mean()
     df = impute_mean(df, "NumberOfDependents")
+
     for col in SENTINEL_COLUMNS:
         df = impute_mean(df, col)
     df = impute_monthly_income(df)
+
+    MODEL_DIR.mkdir(parents=True, exist_ok=True)
+    joblib.dump(dependents_mean, DEPENDENTS_MEAN_PATH)
+
     return df
 
 

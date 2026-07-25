@@ -42,7 +42,6 @@ credit-risk-scoring/
 ├── src/                  # Pipeline Python modulaire (preprocess, features, train)
 ├── Dockerfile             # Fichier de build des images Docker
 ├── docker-compose.yml     # Orchestration des services API et Dashboard
-├── run_pipeline.py        # Script d'exécution End-to-End du pipeline
 └── requirements.txt       # Dépendances du projet
 ```
 
@@ -50,9 +49,7 @@ credit-risk-scoring/
 
 ## Guide de Démarrage Rapide
 
-### Option 1 : Déploiement avec Docker Compose (Recommandé)
-
-Pour builder et lancer l'ensemble des conteneurs isolés en une seule commande :
+Pour build et lancer l'ensemble des conteneurs isolés en une seule commande :
 
 ```bash
 docker compose up --build -d
@@ -66,27 +63,3 @@ Pour arrêter les conteneurs :
 ```bash
 docker compose down
 ```
-
----
-
-### Option 2 : Lancement en Environnement Local
-
-1. **Installer les dépendances** :
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-2. **(Optionnel) Ré-entraîner le pipeline complet** :
-   ```bash
-   python run_pipeline.py
-   ```
-
-3. **Lancer le serveur API** :
-   ```bash
-   uvicorn api.main:app --reload
-   ```
-
-4. **Lancer le Dashboard Streamlit** (dans un second terminal) :
-   ```bash
-   streamlit run dashboard/app.py
-   ```

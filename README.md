@@ -1,72 +1,121 @@
-# Système d'Aide à la Décision & d'Analyse de Crédit Bancaire
+# Credit Risk Scoring & Explainable AI (XAI) System
 
-Un outil décisionnel bancaire moderne, transparent et intuitif conçu pour accompagner les conseillers dans l'évaluation de la solvabilité des emprunteurs et la maîtrise du risque de crédit.
-
----
-
-## À quoi sert ce projet ?
-
-Lorsqu'un client sollicite un prêt bancaire, l'établissement doit analyser sa situation financière pour s'assurer qu'il sera en mesure de rembourser ses mensualités sans se retrouver en situation de surendettement.
-
-Cette application permet aux conseillers bancaires de :
-1. **Saisir rapidement les informations financières d'un candidat à l'emprunt** (revenus, charges, retards de paiement, engagements en cours).
-2. **Obtenir instantanément un avis décisionnel clair** (*Avis Favorable / Crédit Accordé* ou *Avis Défavorable / Crédit Refusé*).
-3. **Comprendre précisément les raisons de la décision** grâce à un découpage transparent des facteurs de risque et des points forts du dossier.
+Système complet d'évaluation du risque de crédit bancaire et d'aide à la décision, conçu avec une architecture MLOps robuste (API REST FastAPI, explicabilité SHAP, application Streamlit et conteneurisation Docker).
 
 ---
 
-## Pourquoi cette approche est-elle innovante ?
+## 🎯 Objectif et Métier
 
-Contrairement aux outils traditionnels obscurs (effet "boîte noire"), cette solution met l'accent sur la **transparence** et l'**explicabilité** :
+Dans le secteur bancaire, l'octroi d'un prêt nécessite d'évaluer la probabilité qu'un emprunteur se retrouve en situation de défaut de paiement dans les 2 ans.
 
-* **Zéro décision arbitraire** : Chaque avis repose sur l'analyse objective de l'historique de paiement, du niveau d'endettement et de la capacité financière.
-* **Explication détaillée** : Le conseiller peut visualiser directement les éléments qui jouent en faveur du client (ex: *faible utilisation des crédits*) et les critères de vigilance (ex: *retards de paiement passés*).
-* **Conformité & Équité** : Garantit une analyse équitable et conforme aux exigences des régulateurs bancaires.
+Ce projet met en place une chaîne décisionnelle de bout en bout qui :
+1. **Évalue le risque de défaut** à partir du profil financier de l'emprunteur.
+2. **Prend une décision automatisée** (Crédit Accordé ou Refusé) basée sur un seuil de risque conservateur.
+3. **Fournit une explicabilité totale (XAI)** pour chaque décision individuelle, conformément aux exigences réglementaires de transparence bancaire (ACPR / RGPD).
 
 ---
 
-## Comment fonctionne l'interface ? (En 3 étapes)
+## 🚀 Ce qui fait la valeur de ce projet (Highlights Techniques)
+
+Ce projet se distingue par une rigueur méthodologique appliquée à chaque étape du pipeline Data Science et MLOps :
+
+* **Imputation avancée sans fuite de données (Data Leakage)** :
+  La variable `MonthlyIncome` présente des valeurs manquantes. Plutôt qu'une simple imputation par la moyenne, nous utilisons l'algorithme **MissForest** (`IterativeImputer` par Random Forest). L'imputer est entraîné sur le jeu de données d'apprentissage et sauvegardé pour réutilisation directe lors de l'inférence API, garantissant une cohérence absolue entre entraînement et production.
+
+* **Feature Engineering ciblé** :
+  Création d'indicateurs métier stratégiques : score de retards cumulés pondéré (`WeightedPastDue`), indicateur binaire de présence d'impayés (`HasAnyPastDue`), et ratio de revenu disponible par personne à charge (`IncomePerPerson`).
+
+* **Modélisation & Optimisation avec LightGBM et Optuna** :
+  Choix de l'algorithme **LightGBM** pour sa rapidité, sa gestion des relations non linéaires et son efficacité sur des classes déséquilibrées. Recherche des hyperparamètres optimisée par l'algorithme bayésien **Optuna** (ROC-AUC > 0.86).
+
+---
+
+## 🏗️ Architecture du Système
 
 ```
-+--------------------------------+       +------------------------------------+
-|  1. Saisie du Dossier Client   | ----> |  2. Évaluation de la Solvabilité   |
-| (Revenu, Endettement, Retards) |       |  (Score de risque & Avis Favorable)|
-+--------------------------------+       +------------------------------------+
-                                                           |
-                                                           v
-                                         +------------------------------------+
-                                         |  3. Explication de la Décision     |
-                                         | (Facteurs clés & Points d'attention|
-                                         +------------------------------------+
++-----------------------------------------------------------------------+
+|                       1. Pipeline de Données                         |
+|   Données brutes -> Imputation MissForest -> Feature Engineering      |
++-----------------------------------------------------------------------+
+                                   |
+                                   v
++-----------------------------------------------------------------------+
+|                    2. Modélisation & Explicabilité                    |
+|       Modèle LightGBM (Optuna) + Explainer SHAP (TreeExplainer)       |
++-----------------------------------------------------------------------+
+                                   |
+                                   v
++-----------------------------------------------------------------------+
+|                     3. Service d'Inférence API                        |
+|                  FastAPI REST Service (Endpoint /predict)             |
++-----------------------------------------------------------------------+
+                                   |
+                                   v
++-----------------------------------------------------------------------+
+|                 4. Application Métier Conseiller                      |
+|                  Streamlit Dashboard (Mode sombre / clair)            |
++-----------------------------------------------------------------------+
 ```
-
-1. **Panneau latéral de Saisie** : Le conseiller renseigne le profil de l'emprunteur (âge, charges, revenus, historique bancaire).
-2. **Carte Décisionnelle** : Un banner lisible affiche immédiatement l'avis final et la jauge de risque globale.
-3. **Analyse des Critères & Synthèse** : Des graphiques clairs détaillent les points forts et les axes de préoccupation du dossier.
 
 ---
 
-## Comment lancer l'application ?
+## 📂 Structure du Dépôt
 
-Pour démarrer l'application et l'ouvrir dans votre navigateur :
+```
+credit-risk-scoring/
+├── api/                  # Moteur d'inférence REST FastAPI
+├── dashboard/            # Application web Streamlit et styles CSS
+├── data/                 # Traitement des données financières (raw & processed)
+├── models/               # Artefacts sauvegardés (LightGBM, MissForest, Mean)
+├── notebooks/             # Cahiers d'analyse et d'expérimentation (EDA, Modélisation)
+├── src/                  # Pipeline Python modulaire (preprocess, features, train)
+├── Dockerfile             # Fichier de build des images Docker
+├── docker-compose.yml     # Orchestration des services API et Dashboard
+├── run_pipeline.py        # Script d'exécution End-to-End du pipeline
+└── requirements.txt       # Dépendances du projet
+```
 
-1. **Installer les prérequis** :
+---
+
+## 💻 Guide de Démarrage Rapide
+
+### Option 1 : Déploiement avec Docker Compose (Recommandé)
+
+Pour builder et lancer l'ensemble des conteneurs isolés en une seule commande :
+
+```bash
+docker compose up --build -d
+```
+
+Accès aux services :
+* **Application Conseiller (Streamlit)** : http://localhost:8501
+* **Documentation API Swagger (FastAPI)** : http://localhost:8000/docs
+
+Pour arrêter les conteneurs :
+```bash
+docker compose down
+```
+
+---
+
+### Option 2 : Lancement en Environnement Local
+
+1. **Installer les dépendances** :
    ```bash
    pip install -r requirements.txt
    ```
 
-2. **Démarrer les services** :
+2. **(Optionnel) Ré-entraîner le pipeline complet** :
    ```bash
-   # Lancer le moteur de calcul (API)
-   uvicorn api.main:app --reload
-
-   # Lancer l'interface utilisateur (Dashboard)
-   streamlit run dashboard/app.py
+   python run_pipeline.py
    ```
 
-3. **Consulter l'application** : Ouvrez votre navigateur sur **http://localhost:8501**.
+3. **Lancer le serveur API** :
+   ```bash
+   uvicorn api.main:app --reload
+   ```
 
----
-
-## Confidentialité & Éthique
-Toutes les données saisies sont traitées en temps réel de manière confidentielle afin de garantir le respect de la vie privée des emprunteurs.
+4. **Lancer le Dashboard Streamlit** (dans un second terminal) :
+   ```bash
+   streamlit run dashboard/app.py
+   ```

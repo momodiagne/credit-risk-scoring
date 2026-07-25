@@ -1,23 +1,23 @@
-# Credit Risk Scoring & Explainable AI (XAI) System
+# Credit Risk Scoring System
 
-Système complet d'évaluation du risque de crédit bancaire et d'aide à la décision, conçu avec une architecture MLOps robuste (API REST FastAPI, explicabilité SHAP, application Streamlit et conteneurisation Docker).
+Système complet d'évaluation du risque de crédit bancaire et d'aide à la décision.
 
 ---
 
-## 🎯 Objectif et Métier
+## Objectif et Métier
 
 Dans le secteur bancaire, l'octroi d'un prêt nécessite d'évaluer la probabilité qu'un emprunteur se retrouve en situation de défaut de paiement dans les 2 ans.
 
 Ce projet met en place une chaîne décisionnelle de bout en bout qui :
 1. **Évalue le risque de défaut** à partir du profil financier de l'emprunteur.
 2. **Prend une décision automatisée** (Crédit Accordé ou Refusé) basée sur un seuil de risque conservateur.
-3. **Fournit une explicabilité totale (XAI)** pour chaque décision individuelle, conformément aux exigences réglementaires de transparence bancaire (ACPR / RGPD).
+3. **Fournit une explicabilité totale** pour chaque décision individuelle, conformément aux exigences réglementaires de transparence bancaire (ACPR / RGPD).
 
 ---
 
-## 🚀 Ce qui fait la valeur de ce projet (Highlights Techniques)
+## Points Forts Techniques
 
-Ce projet se distingue par une rigueur méthodologique appliquée à chaque étape du pipeline Data Science et MLOps :
+Ce projet se distingue par une rigueur méthodologique appliquée à chaque étape du pipeline :
 
 * **Imputation avancée sans fuite de données (Data Leakage)** :
   La variable `MonthlyIncome` présente des valeurs manquantes. Plutôt qu'une simple imputation par la moyenne, nous utilisons l'algorithme **MissForest** (`IterativeImputer` par Random Forest). L'imputer est entraîné sur le jeu de données d'apprentissage et sauvegardé pour réutilisation directe lors de l'inférence API, garantissant une cohérence absolue entre entraînement et production.
@@ -30,36 +30,7 @@ Ce projet se distingue par une rigueur méthodologique appliquée à chaque éta
 
 ---
 
-## 🏗️ Architecture du Système
-
-```
-+-----------------------------------------------------------------------+
-|                       1. Pipeline de Données                         |
-|   Données brutes -> Imputation MissForest -> Feature Engineering      |
-+-----------------------------------------------------------------------+
-                                   |
-                                   v
-+-----------------------------------------------------------------------+
-|                    2. Modélisation & Explicabilité                    |
-|       Modèle LightGBM (Optuna) + Explainer SHAP (TreeExplainer)       |
-+-----------------------------------------------------------------------+
-                                   |
-                                   v
-+-----------------------------------------------------------------------+
-|                     3. Service d'Inférence API                        |
-|                  FastAPI REST Service (Endpoint /predict)             |
-+-----------------------------------------------------------------------+
-                                   |
-                                   v
-+-----------------------------------------------------------------------+
-|                 4. Application Métier Conseiller                      |
-|                  Streamlit Dashboard (Mode sombre / clair)            |
-+-----------------------------------------------------------------------+
-```
-
----
-
-## 📂 Structure du Dépôt
+## Structure du Dépôt
 
 ```
 credit-risk-scoring/
@@ -77,7 +48,7 @@ credit-risk-scoring/
 
 ---
 
-## 💻 Guide de Démarrage Rapide
+## Guide de Démarrage Rapide
 
 ### Option 1 : Déploiement avec Docker Compose (Recommandé)
 

@@ -40,13 +40,9 @@ def healthcheck():
 @app.post("/predict", response_model=PredictionResponse)
 def predict_credit_risk(request: ClientDataRequest):
     try:
-        # 1. Préparation des variables
         X_client = model_service.prepare_features(request)
-
-        # 2. Prédiction de la probabilité de défaut
         proba = float(model_service.model.predict_proba(X_client)[0, 1])
 
-        # 3. Prise de décision & Niveau de risque
         decision = "Refusé" if proba >= SEUIL_DECISION else "Accordé"
 
         if proba < 0.15:
@@ -56,7 +52,6 @@ def predict_credit_risk(request: ClientDataRequest):
         else:
             niveau_risque = "Élevé"
 
-        # 4. Calcul de l'explicabilité SHAP
         shap_values = model_service.explainer(X_client)
         impacts = shap_values.values[0]
 

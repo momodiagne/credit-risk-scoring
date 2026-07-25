@@ -9,6 +9,8 @@ services:
       - ./models:/app/models
       - ./data:/app/data
       - ./reports:/app/reports
+      - ./api:/app/api
+      - ./src:/app/src
     restart: always
 
   dashboard:
@@ -19,6 +21,9 @@ services:
       - "8501:8501"
     environment:
       - API_URL=http://api:8000/predict
+    volumes:
+      - ./dashboard:/app/dashboard
+      - ./.streamlit:/app/.streamlit
     depends_on:
       - api
     restart: always

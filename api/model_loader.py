@@ -80,12 +80,10 @@ class ModelService:
         Transforme la requête Pydantic brute en DataFrame avec les 14 features
         exactes attendues par le modèle.
         """
-        # 1. Renommage des colonnes Pydantic (underscores -> tirets)
         n_30_59 = req.NumberOfTime30_59DaysPastDueNotWorse
         n_60_89 = req.NumberOfTime60_89DaysPastDueNotWorse
         n_90 = req.NumberOfTimes90DaysLate
 
-        # 2. Dependents : imputation par la moyenne d'entraînement, comme en train
         dependents_is_missing = req.NumberOfDependents is None
         dependents = (
             self.dependents_mean
@@ -93,7 +91,6 @@ class ModelService:
             else float(req.NumberOfDependents)
         )
 
-        # 3. Income : imputation par le MissForest entraîné, pas une constante
         income_is_missing = 1 if req.MonthlyIncome is None else 0
         base_row = {
             "RevolvingUtilizationOfUnsecuredLines": req.RevolvingUtilizationOfUnsecuredLines,
@@ -111,8 +108,6 @@ class ModelService:
         }
         income = self._impute_income(base_row)
 
-        # 4. Features engineered — calculées APRES imputation, sur les valeurs
-        #    imputées, exactement comme dans src/features/build_features.py
         weighted_past_due = (n_30_59 * 1) + (n_60_89 * 2) + (n_90 * 3)
         total_past_due = n_30_59 + n_60_89 + n_90
         has_any_past_due = 1 if total_past_due > 0 else 0

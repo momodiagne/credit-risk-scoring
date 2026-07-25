@@ -1,106 +1,72 @@
-# 💳 Credit Risk Scoring & Explainable AI (XAI)
+# Système d'Aide à la Décision & d'Analyse de Crédit Bancaire
 
-Système complet de Scoring de Crédit bancaire combinant le modèle **LightGBM**, l'explicabilité **SHAP**, une **API REST FastAPI**, un **Dashboard Streamlit** et une **containerisation Docker**.
-
----
-
-## 📌 Fonctionnalités
-
-- **Pipeline de Données** : Nettoyage des anomalies (âge=0, codes 96/98) et imputation avancée par Random Forest (**MissForest**) pour le revenu mensuel.
-- **Feature Engineering** : Création d'indicateurs de retard de paiement (`WeightedPastDue`, `HasAnyPastDue`) et ratios financiers (`IncomePerPerson`).
-- **Modélisation & Optimisation** : LightGBM optimisé par **Optuna** (AUC > 0.86, Gini > 0.72).
-- **Explicabilité (XAI)** : Explication des décisions au niveau global et individuel avec **SHAP**.
-- **API REST (FastAPI)** : Service haute performance pour servir les prédictions et les facteurs SHAP par HTTP, avec une imputation du revenu cohérente entre entraînement et serving (réutilisation du même MissForest fitted, pas d'une constante).
-- **Dashboard Interactive (Streamlit)** : Interface de simulation pour les analystes crédit.
-- **Orchestration & DevOps** : Script d'exécution End-to-End (`run_pipeline.py`), suite de tests `pytest`, et déploiement `docker-compose`.
+Un outil décisionnel bancaire moderne, transparent et intuitif conçu pour accompagner les conseillers dans l'évaluation de la solvabilité des emprunteurs et la maîtrise du risque de crédit.
 
 ---
 
-## Démarrage Rapide
+## À quoi sert ce projet ?
 
-### 1. Installation de l'environnement
+Lorsqu'un client sollicite un prêt bancaire, l'établissement doit analyser sa situation financière pour s'assurer qu'il sera en mesure de rembourser ses mensualités sans se retrouver en situation de surendettement.
 
-```bash
-git clone https://github.com/momodiagne/credit-risk-scoring.git
-cd credit-risk-scoring
-pip install -r requirements.txt
-```
-
-### 2. Modèles pré-entraînés inclus
-
-Les artefacts entraînés (`models/*.joblib` : modèle LightGBM, imputer MissForest du revenu, moyenne de personnes à charge) sont **inclus dans le repo** afin que l'application fonctionne immédiatement après un clone, sans ré-entraînement préalable.
-
-Pour régénérer le pipeline complet depuis zéro (nettoyage, imputation, feature engineering, entraînement) :
-
-```bash
-python run_pipeline.py
-```
-
-ou étape par étape :
-
-```bash
-python -m src.data.preprocess
-python -m src.features.build_features
-python -m src.models.train
-```
-
-### 3. Démarrage de l'API FastAPI
-
-```bash
-uvicorn api.main:app --reload
-```
-Accédez à la documentation Swagger interactive sur : http://127.0.0.1:8000/docs
-
-### 4. Démarrage du Dashboard Streamlit
-
-```bash
-streamlit run dashboard/app.py
-```
-Accédez à l'application sur : http://localhost:8501
-
-### 5. Démarrage avec Docker Compose
-
-Pour lancer l'ensemble de l'architecture (API + Dashboard) en conteneurs isolés :
-
-```bash
-docker-compose up --build
-```
-
-Vous pourrez accéder :
-- À l'API sur [http://localhost:8000](http://localhost:8000)
-- Au Dashboard sur [http://localhost:8501](http://localhost:8501)
-
-Pour arrêter les conteneurs :
-```bash
-docker-compose down
-```
+Cette application permet aux conseillers bancaires de :
+1. **Saisir rapidement les informations financières d'un candidat à l'emprunt** (revenus, charges, retards de paiement, engagements en cours).
+2. **Obtenir instantanément un avis décisionnel clair** (*Avis Favorable / Crédit Accordé* ou *Avis Défavorable / Crédit Refusé*).
+3. **Comprendre précisément les raisons de la décision** grâce à un découpage transparent des facteurs de risque et des points forts du dossier.
 
 ---
 
-## 📁 Structure du Projet
+## Pourquoi cette approche est-elle innovante ?
 
-```
-credit-risk-scoring/
-├── api/                  # API REST FastAPI
-│   ├── main.py           # Point d'entrée de l'API
-│   └── ...
-├── dashboard/            # Application Streamlit
-│   └── app.py            # Application de scoring
-├── data/                 # Données brutes et traitées (régénérées via le pipeline)
-├── models/               # Modèles entraînés et explainers SHAP (inclus dans le repo)
-├── reports/               # Rapports d'évaluation
-├── notebooks/             # Notebooks Jupyter d'exploration
-├── tests/                 # Tests unitaires et d'intégration
-├── docker-compose.yml     # Configuration Docker & Orchestration
-├── Dockerfile             # Build de l'image Docker
-└── run_pipeline.py        # Script d'exécution complet
-```
+Contrairement aux outils traditionnels obscurs (effet "boîte noire"), cette solution met l'accent sur la **transparence** et l'**explicabilité** :
+
+* **Zéro décision arbitraire** : Chaque avis repose sur l'analyse objective de l'historique de paiement, du niveau d'endettement et de la capacité financière.
+* **Explication détaillée** : Le conseiller peut visualiser directement les éléments qui jouent en faveur du client (ex: *faible utilisation des crédits*) et les critères de vigilance (ex: *retards de paiement passés*).
+* **Conformité & Équité** : Garantit une analyse équitable et conforme aux exigences des régulateurs bancaires.
+
 ---
 
-## 🧪 Tests
+## Comment fonctionne l'interface ? (En 3 étapes)
 
-Pour lancer la suite de tests complète :
-
-```bash
-pytest
 ```
++--------------------------------+       +------------------------------------+
+|  1. Saisie du Dossier Client   | ----> |  2. Évaluation de la Solvabilité   |
+| (Revenu, Endettement, Retards) |       |  (Score de risque & Avis Favorable)|
++--------------------------------+       +------------------------------------+
+                                                           |
+                                                           v
+                                         +------------------------------------+
+                                         |  3. Explication de la Décision     |
+                                         | (Facteurs clés & Points d'attention|
+                                         +------------------------------------+
+```
+
+1. **Panneau latéral de Saisie** : Le conseiller renseigne le profil de l'emprunteur (âge, charges, revenus, historique bancaire).
+2. **Carte Décisionnelle** : Un banner lisible affiche immédiatement l'avis final et la jauge de risque globale.
+3. **Analyse des Critères & Synthèse** : Des graphiques clairs détaillent les points forts et les axes de préoccupation du dossier.
+
+---
+
+## Comment lancer l'application ?
+
+Pour démarrer l'application et l'ouvrir dans votre navigateur :
+
+1. **Installer les prérequis** :
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. **Démarrer les services** :
+   ```bash
+   # Lancer le moteur de calcul (API)
+   uvicorn api.main:app --reload
+
+   # Lancer l'interface utilisateur (Dashboard)
+   streamlit run dashboard/app.py
+   ```
+
+3. **Consulter l'application** : Ouvrez votre navigateur sur **http://localhost:8501**.
+
+---
+
+## Confidentialité & Éthique
+Toutes les données saisies sont traitées en temps réel de manière confidentielle afin de garantir le respect de la vie privée des emprunteurs.

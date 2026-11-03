@@ -1,0 +1,11 @@
+{
+    "AUC-ROC": 0.8702,
+    "Gini": 0.7405,
+    "KS": 0.5829,
+    "Brier (score brut)": 0.1407,
+    "Brier (calibré)": 0.0487,
+    "Seuil de décision": 0.1212,
+    "Coût moyen modèle (% prêté)": 2.15,
+    "Coût moyen tout accorder (% prêté)": 3.88,
+    "Coût moyen tout refuser (% prêté)": 7.47
+}

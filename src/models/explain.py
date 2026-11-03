@@ -15,7 +15,7 @@ import shap
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 MODEL_PATH = PROJECT_ROOT / "models" / "lgbm_model.joblib"
-FEATURES_PATH = PROJECT_ROOT / "data" / "processed" / "cs-training-features.csv"
+FEATURES_PATH = PROJECT_ROOT / "data" / "processed" / "cs-test-features.csv"
 REPORTS_DIR = PROJECT_ROOT / "reports"
 
 TARGET = "SeriousDlqin2yrs"

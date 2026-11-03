@@ -11,6 +11,10 @@ import pandas as pd
 from fastapi import FastAPI, HTTPException
 from api.model_loader import model_service
 from api.schemas import ClientDataRequest, FeatureImpact, PredictionResponse
+from src.config import DECISION_THRESHOLD
+import logging
+
+logger = logging.getLogger("credit_scoring_api")
 
 app = FastAPI(
     title="Credit Risk Scoring API",
@@ -18,7 +22,6 @@ app = FastAPI(
     version="1.0.0",
 )
 
-SEUIL_DECISION = 0.30  # Seuil conservateur : au-dessus de 30% de probabilité de défaut, on refuse
 
 
 @app.get("/")
@@ -41,13 +44,13 @@ def healthcheck():
 def predict_credit_risk(request: ClientDataRequest):
     try:
         X_client = model_service.prepare_features(request)
-        proba = float(model_service.model.predict_proba(X_client)[0, 1])
+        proba = model_service.predict_default_proba(X_client)
 
-        decision = "Refusé" if proba >= SEUIL_DECISION else "Accordé"
+        decision = "Refusé" if proba >= DECISION_THRESHOLD else "Accordé"
 
-        if proba < 0.15:
+        if proba < DECISION_THRESHOLD / 2:
             niveau_risque = "Faible"
-        elif proba < 0.30:
+        elif proba < DECISION_THRESHOLD:
             niveau_risque = "Modéré"
         else:
             niveau_risque = "Élevé"
@@ -99,10 +102,11 @@ def predict_credit_risk(request: ClientDataRequest):
             probabilite_defaut=round(proba, 4),
             decision=decision,
             niveau_risque=niveau_risque,
-            seuil_applique=SEUIL_DECISION,
+            seuil_applique=round(DECISION_THRESHOLD, 4),
             facteurs_risque=facteurs_risque,
             facteurs_favorables=facteurs_favorables,
         )
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erreur lors de la prédiction : {str(e)}")
+    except Exception:
+        logger.exception("Erreur lors de la prédiction")
+        raise HTTPException(status_code=500, detail="Erreur interne lors de la prédiction.")

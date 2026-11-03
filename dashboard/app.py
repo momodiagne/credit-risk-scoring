@@ -8,6 +8,7 @@ import requests
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+import streamlit.components.v1 as components
 
 API_URL = os.getenv("API_URL", "http://127.0.0.1:8000/predict")
 STYLE_PATH = Path(__file__).parent / "style.css"
@@ -27,9 +28,10 @@ FEATURE_LABELS = {
     "WeightedPastDue": "Score retards cumulés",
     "DebtRatio_is_high": "Endettement critique",
     "RevolvingUtilization_is_high": "Plafond crédit atteint",
-    "Income_per_Dependent": "Revenu par personne à charge",
-    "Total_Past_Due": "Cumul retards de paiement",
+    "IncomePerPerson": "Revenu par personne du foyer",
+    "HasAnyPastDue": "Au moins un retard de paiement",
 }
+TECHNICAL_FEATURES = {"MonthlyIncome_is_missing"}
 
 # Icones SVG
 SVG_BANK = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 10px;"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>'
@@ -46,6 +48,27 @@ def clean_feature_label(name: str) -> str:
 
 
 def load_css():
+    components.html(
+        """
+        <script>
+        try {
+            var topDoc = window.top.document;
+            topDoc.documentElement.lang = "fr";
+            topDoc.documentElement.setAttribute("lang", "fr");
+            topDoc.body.classList.add("notranslate");
+            
+            if (!topDoc.querySelector('meta[name="google"]')) {
+                var meta = topDoc.createElement('meta');
+                meta.name = "google";
+                meta.content = "notranslate";
+                topDoc.getElementsByTagName('head')[0].appendChild(meta);
+            }
+        } catch (e) {}
+        </script>
+        """,
+        height=0,
+        width=0,
+    )
     if STYLE_PATH.exists():
         with open(STYLE_PATH, "r", encoding="utf-8") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
@@ -168,8 +191,8 @@ def render_impact_charts(result: dict):
     st.caption("Principaux facteurs d'impact identifiés sur ce dossier.")
 
     col_fav, col_risk = st.columns(2)
-    fav_list = result.get("facteurs_favorables", [])
-    risk_list = result.get("facteurs_risque", [])
+    fav_list = [f for f in result.get("facteurs_favorables", []) if f["feature"] not in TECHNICAL_FEATURES]
+    risk_list = [f for f in result.get("facteurs_risque", []) if f["feature"] not in TECHNICAL_FEATURES]
 
     with col_fav:
         st.markdown(f"#### {SVG_TREND_UP}Facteurs Favorables", unsafe_allow_html=True)

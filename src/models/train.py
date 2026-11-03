@@ -11,11 +11,11 @@ from pathlib import Path
 import joblib
 import pandas as pd
 import lightgbm as lgb
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score, classification_report
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-FEATURES_PATH = PROJECT_ROOT / "data" / "processed" / "cs-training-features.csv"
+TRAIN_FEATURES_PATH = PROJECT_ROOT / "data" / "processed" / "cs-train-features.csv"
+TEST_FEATURES_PATH = PROJECT_ROOT / "data" / "processed" / "cs-test-features.csv"
 MODEL_DIR = PROJECT_ROOT / "models"
 MODEL_PATH = MODEL_DIR / "lgbm_model.joblib"
 
@@ -39,39 +39,33 @@ BEST_PARAMS = {
 }
 
 
-def load_features() -> pd.DataFrame:
-    if not FEATURES_PATH.exists():
+def load_features(path: Path) -> pd.DataFrame:
+    if not path.exists():
         raise FileNotFoundError(
-            f"Fichier introuvable : {FEATURES_PATH}. "
+            f"Fichier introuvable : {path}. "
             "Veuillez exécuter 'python -m src.features.build_features' d'abord."
         )
-    return pd.read_csv(FEATURES_PATH)
+    return pd.read_csv(path)
 
 
 def train_model() -> None:
-    print("Chargement des données d'entraînement")
-    df = load_features()
+    print("Chargement des données")
+    train_df = load_features(TRAIN_FEATURES_PATH)
+    test_df = load_features(TEST_FEATURES_PATH)
 
-    X = df.drop(columns=[TARGET])
-    y = df[TARGET]
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
-    )
+    X_train, y_train = train_df.drop(columns=[TARGET]), train_df[TARGET]
+    X_test, y_test = test_df.drop(columns=[TARGET]), test_df[TARGET]
 
     print("Entraînement du modèle LightGBM")
     model = lgb.LGBMClassifier(**BEST_PARAMS)
     model.fit(X_train, y_train)
 
-    # Évaluation rapide
     y_proba = model.predict_proba(X_test)[:, 1]
-    auc = roc_auc_score(y_test, y_proba)
-    print(f"AUC-ROC sur le jeu de test : {auc:.4f}")
+    print(f"AUC-ROC sur le jeu de test : {roc_auc_score(y_test, y_proba):.4f}")
 
-    # Sauvegarde du modèle
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
     joblib.dump(model, MODEL_PATH)
-    print(f"Modèle sauvegardé avec succès dans : {MODEL_PATH}")
+    print(f"Modèle sauvegardé dans : {MODEL_PATH}")
 
 
 if __name__ == "__main__":

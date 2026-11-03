@@ -16,7 +16,7 @@ class ClientDataRequest(BaseModel):
     )
     age: int = Field(..., ge=18, le=120, description="Âge du client")
     NumberOfTime30_59DaysPastDueNotWorse: int = Field(
-        0, ge=0, description="Nombre de retards de 30 à 59 jours"
+        0, ge=0, le=20, description="Nombre de retards de 30 à 59 jours"
     )
     DebtRatio: float = Field(..., ge=0.0, description="Taux d'endettement (ou dette si revenu manquant)")
     MonthlyIncome: Optional[float] = Field(
@@ -26,13 +26,13 @@ class ClientDataRequest(BaseModel):
         ..., ge=0, description="Nombre de crédits et prêts ouverts"
     )
     NumberOfTimes90DaysLate: int = Field(
-        0, ge=0, description="Nombre de retards de 90 jours ou plus"
+        0, ge=0, le=20, description="Nombre de retards de 90 jours ou plus"
     )
     NumberRealEstateLoansOrLines: int = Field(
         0, ge=0, description="Nombre de prêts immobiliers"
     )
     NumberOfTime60_89DaysPastDueNotWorse: int = Field(
-        0, ge=0, description="Nombre de retards de 60 à 89 jours"
+        0, ge=0, le=20, description="Nombre de retards de 60 à 89 jours"
     )
     NumberOfDependents: Optional[float] = Field(
         0.0, ge=0.0, description="Nombre de personnes à charge"

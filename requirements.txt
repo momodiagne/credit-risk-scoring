@@ -1,29 +1,29 @@
 # Core & Data Processing
-numpy
-pandas
-scikit-learn
-joblib
-scipy
+numpy==2.3.5
+pandas==2.3.3
+scikit-learn==1.8.0
+joblib==1.5.3
+scipy==1.16.3
 
 # Machine Learning & Optimization
-lightgbm
-optuna
-shap
+lightgbm==4.6.0
+optuna==4.9.0
+shap==0.52.0
 
 # Visualization
-matplotlib
-seaborn
-plotly
+matplotlib==3.10.7
+seaborn==0.13.2
+plotly==6.5.1
 
 # API FastAPI
-fastapi
-uvicorn
-pydantic
+fastapi==0.139.2
+uvicorn==0.51.0
+pydantic==2.14.1
 
 # Dashboard Streamlit
-streamlit
-requests
+streamlit==1.55.0
+requests==2.34.2
 
 # Testing
-pytest
-httpx
+pytest==9.1.1
+httpx==0.28.1

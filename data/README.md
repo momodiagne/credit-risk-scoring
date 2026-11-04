@@ -1,90 +1,69 @@
-# Imputation des Données Manquantes & Stratégie Métier
+# Données et imputation des valeurs manquantes
 
-Ce document explique en détail la méthodologie d'imputation retenue pour traiter les valeurs manquantes dans le projet de scoring de crédit.
-
----
-
-## 1. Problématique des Données Manquantes dans le Crédit
-
-Dans les bases de données bancaires, la variable **`MonthlyIncome`** (Revenu Mensuel) présente très souvent un taux élevé d'omissions (environ 20% de valeurs manquantes dans le jeu de données GMSC). 
-
-Plusieurs raisons expliquent ces manques :
-* Le client a refusé de communiquer son revenu.
-* Le client n'a pas de revenu fixe (travailleur indépendant, intérimaire).
-* Omission lors de la saisie du dossier.
-
-En Machine Learning, de nombreux modèles (comme la Régression Logistique ou certaines forêts d'arbres) ne peuvent pas traiter directement les valeurs manquantes (`NaN`). Il est donc indispensable d'imputer ces données.
+Les données ne sont pas versionnées. Pour réentraîner le modèle, placer `cs-training.csv` (Kaggle, *Give Me Some Credit*) dans `data/raw/`.
 
 ---
 
-## 2. Pourquoi les méthodes d'imputation classiques sont insuffisantes
+## 1. Problème
 
-### Imputation par la Moyenne ou la Médiane
-
-La méthode la plus simple consiste à remplacer tous les revenus manquants par la moyenne globale ou la médiane des revenus de la base.
-
-**Limites de cette approche** :
-* **Destruction des corrélations** : Elle suppose qu'un jeune diplômé de 22 ans et un cadre supérieur de 50 ans sans revenu déclaré ont exactement le même revenu.
-* **Réduction de la variance** : Création d'un pic artificiel de données autour de la médiane, ce qui biaise les distributions.
-* **Perte d'information** : Le modèle perd la capacité de distinguer le profil réel de l'emprunteur.
+La variable `MonthlyIncome` est manquante pour environ 20 % des clients : refus de communiquer, revenu irrégulier, omission de saisie. Quelques autres colonnes contiennent des valeurs manquantes (`NumberOfDependents`) ou des codes spéciaux (`age = 0`, valeurs 96 et 98 dans les colonnes de retards).
 
 ---
 
-## 3. L'Approche Retenue : Imputation par MissForest (IterativeImputer)
+## 2. Pipeline de préparation (`src/data/preprocess.py`)
 
-### Qu'est-ce que l'algorithme MissForest ?
+Ordre des opérations :
 
-**MissForest** est un algorithme d'imputation itératif basé sur des forêts d'arbres décisionnels (**Random Forest**). 
+1. **Nettoyage des anomalies** (aucune statistique apprise) : `age = 0` et les codes 96 / 98 des trois colonnes de retards deviennent des valeurs manquantes.
+2. **Séparation train / test** 80 / 20, stratifiée sur la cible (`random_state=42`).
+3. **Ajustement des imputers sur le train uniquement** :
+   * moyenne pour `age`, `NumberOfDependents` et les trois colonnes de retards ;
+   * MissForest pour `MonthlyIncome`.
+4. **Application** de ces imputers au train et au test.
+5. L'indicateur `MonthlyIncome_is_missing` est créé **avant** l'imputation, et le revenu imputé est borné à 0 minimum.
 
-Au lieu de traiter l'imputation comme un simple calcul statistique global, MissForest traite le remplacement du revenu comme un **problème de prédiction supervisée**.
+Sorties : `data/processed/cs-train-clean.csv` et `cs-test-clean.csv`. L'étape suivante (`src/features/build_features.py`) produit `cs-train-features.csv` et `cs-test-features.csv`.
 
-### Fonctionnement de l'algorithme étape par étape
-
-1. **Initialisation** :
-   Les valeurs manquantes du revenu (`MonthlyIncome`) sont temporairement remplacées par la médiane globale de la colonne.
-
-2. **Construction du jeu de données d'apprentissage** :
-   * Les clients ayant un revenu connu servent d'ensemble d'entraînement.
-   * Les clients ayant un revenu manquant servent d'ensemble de test à prédire.
-
-3. **Entraînement du Random Forest** :
-   Un modèle Random Forest est entraîné à prédire le revenu à partir des 9 autres caractéristiques connues du client :
-   * Âge de l'emprunteur
-   * Taux d'utilisation du crédit revolving
-   * Taux d'endettement
-   * Nombre de crédits actifs et prêts immobiliers
-   * Historique des retards de paiement (30-59j, 60-89j, 90j+)
-   * Nombre de personnes à charge
-
-4. **Prédiction et Mise à jour** :
-   Le Random Forest prédit un revenu personnalisé pour chaque client dont la valeur était manquante.
-
-5. **Convergence itérative** :
-   Les étapes 2 à 4 sont répétées plusieurs fois jusqu'à ce que les revenus imputés se stabilisent.
+Artefacts sauvegardés dans `models/` et réutilisés par l'API : `income_imputer.joblib` et `dependents_mean.joblib`.
 
 ---
 
-## 4. Prévention de la Fuite de Données (Data Leakage)
+## 3. Pourquoi pas une simple moyenne ou médiane pour le revenu
 
-Un point critique en ingénierie des données est d'éviter toute **fuite de données (Data Leakage)** :
-
-* **Séparation stricte Entraînement / Production** :
-  L'algorithme MissForest (`IterativeImputer`) est ajusté (*fitted*) **uniquement** sur le jeu de données d'entraînement (`X_train`).
-* **Sauvegarde de l'imputer** :
-  L'objet imputer entraîné est sauvegardé sous forme d'artefact (`models/income_imputer.joblib`).
-* **Réutilisation en inférence API** :
-  Lorsque le service FastAPI reçoit un nouveau dossier client sans revenu renseigné, il utilise le même objet `income_imputer.joblib` pour estimer le revenu de manière rigoureuse et cohérente avec la phase d'entraînement.
+Remplacer tous les revenus manquants par une même valeur ignore le profil du client (âge, charges, crédits en cours) et crée un pic artificiel dans la distribution. Le notebook `02_missing_data_comparison` compare plusieurs méthodes d'imputation.
 
 ---
 
-## 5. Avantages et Inconvénients de MissForest
+## 4. MissForest (`IterativeImputer` avec Random Forest)
 
-### Avantages
+MissForest traite l'imputation comme un problème de prédiction : le revenu est prédit à partir des autres variables du client.
 
-* **Haute précision** : Estime un revenu réaliste adapté au profil spécifique de chaque client (âge, charges, crédits).
-* **Respect des distributions** : Conserve la variance naturelle des données et les corrélations entre variables.
-* **Généralisation optimale** : Permet au modèle de scoring final (LightGBM) de prendre des décisions plus justes.
+1. **Initialisation** : les revenus manquants sont remplacés temporairement par la moyenne de la colonne.
+2. **Apprentissage** : un Random Forest est entraîné sur les clients dont le revenu est connu, avec 9 variables explicatives (âge, utilisation du crédit revolving, endettement, nombre de crédits ouverts, prêts immobiliers, personnes à charge, et les trois colonnes de retards).
+3. **Prédiction** : il estime le revenu des clients dont la valeur manque.
+4. **Itération** : les étapes 2 et 3 sont répétées, au maximum 5 fois.
 
-### Inconvénients
+Paramètres : 50 arbres, profondeur maximale 10, `max_features="sqrt"`.
 
-* **Coût en temps de calcul** : L'entraînement de plusieurs Random Forest itératifs est plus long qu'un simple calcul de médiane (résolu dans notre projet en sauvegardant l'imputer pré-entraîné).
+---
+
+## 5. Prévention de la fuite de données
+
+* Le découpage train / test est fait **avant** toute imputation.
+* Les imputers (moyennes et MissForest) sont ajustés sur le train seul, puis appliqués au test.
+* En production, l'API applique le même `income_imputer.joblib` et la même moyenne de `NumberOfDependents` que ceux de l'entraînement.
+
+Point restant : la validation croisée d'Optuna est réalisée sur un train déjà imputé, donc l'imputation n'est pas refaite à l'intérieur de chaque pli. Une fuite mineure entre plis est possible.
+
+---
+
+## 6. Avantages et limites
+
+**Avantages**
+* L'estimation tient compte du profil du client au lieu d'une valeur unique.
+* L'indicateur `MonthlyIncome_is_missing` conserve l'information « revenu non renseigné ».
+
+**Limites**
+* Le revenu imputé est une prédiction : il ajoute de l'incertitude qui n'est pas propagée au modèle.
+* Calcul plus long qu'une moyenne (l'imputer est sauvegardé pour ne pas être recalculé).
+* Dans ces données, un revenu non renseigné est associé à un risque un peu plus bas. C'est une particularité du jeu de données, pas une règle métier.

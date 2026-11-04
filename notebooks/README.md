@@ -1,11 +1,25 @@
-# Notebooks d'Exploration & d'Analyse
+# Notebooks d'exploration
 
-Ce dossier contient les cahiers d'analyse (notebooks Jupyter) utilisés durant la phase d'étude préliminaire.
+Notebooks d'exploration et d'expérimentation. **Le pipeline de référence est dans `src/`** : les notebooks justifient les choix, ils ne produisent pas les artefacts livrés.
 
-## Liste des notebooks
+## Liste
 
-* `01_eda.ipynb` : Exploration des données brutes et identification des tendances.
-* `02_preprocessing.ipynb` : Essais de nettoyage et de correction des valeurs manquantes.
-* `03_feature_engineering.ipynb` : Expérimentations sur la création des nouveaux indicateurs financiers.
-* `04_modeling.ipynb` : Comparaison des performances des différentes approches de scoring.
-* `05_explainability.ipynb` : Analyse de l'explicabilité et des motifs de décision.
+* `01_eda.ipynb` : exploration des données brutes.
+* `02_missing_data_comparison.ipynb` : comparaison de méthodes d'imputation.
+* `03_feature_engineering.ipynb` : création et sélection des features, sur le train uniquement.
+* `04_modeling.ipynb` : comparaison de modèles (régression logistique, Random Forest, LightGBM) et recherche d'hyperparamètres avec Optuna.
+
+## Exécution
+
+Les notebooks 03 et 04 lisent des fichiers produits par `src/`. Depuis la racine du dépôt :
+
+```bash
+python -m src.data.preprocess          # nécessaire au notebook 03
+python -m src.features.build_features  # nécessaire au notebook 04
+```
+
+## À savoir
+
+* Les sorties des cellules ne sont pas versionnées (`nbstripout`). Il faut exécuter les notebooks pour voir les graphiques et les résultats.
+* Dans le notebook 04, le rapport de classification est calculé à un seuil de 0,5 sur des scores bruts, uniquement pour comparer les modèles. Le seuil de production et les probabilités calibrées sont traités dans `src/models/calibrate.py` et `src/models/evaluate.py`.
+* La recherche Optuna du notebook 04 peut durer plusieurs minutes.
